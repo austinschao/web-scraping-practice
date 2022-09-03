@@ -2,7 +2,7 @@
 
 const puppeteer = require("puppeteer");
 const fs = require("fs/promises");
-const { isMainThread } = require("worker_threads");
+const cron = require("node-cron");
 // requiring fs promises so we don't have to deal with messy callbacks
 // and have it return promises
 
@@ -43,7 +43,7 @@ async function start() {
     second is a callback which will take each thing its find from
       the css selector and will pass it to the callback function
   */
-  const photos = await page.$$eval("img", (imgs) => {
+  const photos = await page.$$eval("img", imgs => {
     return imgs.map(img => img.src);
   });
 
@@ -51,6 +51,22 @@ async function start() {
   similuates a click event passing in the CSS selector for that button
   */
   await page.click("#clickme");
+  // page.$eval selects the first elem that matches
+  const clickedData = await page.$eval("#data", elem => elem.textContent);
+  console.log(clickedData);
+
+  /**
+   * Takes two arguments, first is the CSS selector for the input element
+   *  The second value is the second value for the input field to be typed
+   */
+  await page.type("#ourfield", "blue");
+
+  await Promise.all([page.click("#ourform button"), page.waitForNavigation()]);
+  // await page.click("#ourform button");
+  // await page.waitForNavigation(); // Waits for page to change once info is submitted
+  const info = await page.$eval("#message", elem => elem.textContent);
+  console.log(info);
+
 
   for (let photo of photos) {
     // going to the image url
@@ -61,8 +77,16 @@ async function start() {
 
   await browser.close();
 }
+// setting up automation, every 5 secs
+// setInterval(start, 5000);
 
-start();
+
+// cron schedule takes 5 vals but 6 optional for seconds
+// can google how to do other types of automation
+// node system has to be running the entire time, but easier
+//  if it was on a linux system to run on the operating system
+// cron.schedule("*/5 * * * * *", start);
+
 
 /*
 body > div > div > div > strong
